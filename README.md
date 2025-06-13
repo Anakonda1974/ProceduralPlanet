@@ -28,6 +28,15 @@ npm run build
 ```
 The output will be placed in a `dist` directory ready for deployment.
 
+## Running with Express
+
+After building or during development you can start a small Express server with CORS enabled:
+
+```sh
+npm start
+```
+The server serves the project root and exposes a `/status` endpoint.
+
 ## Features
 
 - Real-time procedurally displaced sphere geometry
