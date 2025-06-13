@@ -28,10 +28,10 @@ The output will be placed in a `dist` directory ready for deployment.
 
 ## Features
 
-- Basic scene setup and camera controls
-- Procedural terrain generation
-- Atmosphere and lighting effects
-- Configurable parameters for experimentation
+- Real-time procedurally displaced sphere geometry
+- Biome coloring in the fragment shader
+- Seed-based generation for reproducible planets
+- Orbit controls for interactive inspection
 
 ## Future Improvements
 
