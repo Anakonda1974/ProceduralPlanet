@@ -2,6 +2,8 @@
 
 ProceduralPlanet is an experimental project focused on generating and rendering planets procedurally using [Three.js](https://threejs.org/). The goal is to explore techniques for terrain creation, atmosphere effects and other visual features entirely through code.
 
+A detailed project description in German can be found in [docs/Projektbeschreibung.md](docs/Projektbeschreibung.md).
+
 ## Installation
 
 1. Ensure [Node.js](https://nodejs.org/) is installed.
