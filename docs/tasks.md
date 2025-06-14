@@ -20,3 +20,5 @@ Die folgenden Aufgaben leiten sich aus der Projektbeschreibung ab und dienen als
 - [ ] Echtzeit-Klima-Modell für Jahreszeiten
 - [ ] Export als Heightmap oder Voxelmodell
 - [ ] Rotation und Atmosphärenshell
+- [ ] Benutzerparameter (Seed, Höhenskalierung usw.) per UI einstellbar machen
+- [ ] Detailstufe des Planeten nahtlos erhöhen, wenn die Kamera heranzoomt
