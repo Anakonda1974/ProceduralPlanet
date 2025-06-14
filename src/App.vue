@@ -1,9 +1,9 @@
 <template>
-  <v-app>
+  <v-app>ooo
     <PlanetViewer />
   </v-app>
 </template>
 
 <script setup>
-import PlanetViewer from './components/PlanetViewer.vue';
+import PlanetViewer from '../ProceduralPlanet/src/components/PlanetViewer.vue';
 </script>
