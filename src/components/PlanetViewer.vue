@@ -6,13 +6,21 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GUI } from 'dat.gui';
 
 const container = ref(null);
-let renderer, scene, camera, controls, material, animationId;
+let renderer, scene, camera, controls, material, animationId, gui;
+
+const params = {
+  elevationScale: 0.15,
+  noiseFreq: 5.0,
+  oceanLevel: -0.05
+};
 
 const vertexShader = `
 uniform float uTime;
 uniform float uElevationScale;
+uniform float uNoiseFreq;
 varying vec3 vPos;
 varying float vElevation;
 
@@ -33,7 +41,7 @@ float fbm(vec3 p){
 
 void main(){
   vec3 nPos = normalize(position);
-  float elevation = fbm(nPos * 5.0 + uTime * 0.1);
+  float elevation = fbm(nPos * uNoiseFreq + uTime * 0.1);
   vPos = nPos;
   vElevation = elevation;
   vec3 displaced = nPos * (1.0 + elevation * uElevationScale);
@@ -45,6 +53,7 @@ const fragmentShader = `
 varying vec3 vPos;
 varying float vElevation;
 uniform float uTime;
+uniform float uOceanLevel;
 
 vec3 getBiomeColor(float temp, float moist){
   if(temp < 0.3){
@@ -63,7 +72,7 @@ void main(){
   float temp = clamp((vPos.y + 1.0) / 2.0 + sin(vPos.x * 2.0 + uTime * 0.1) * 0.1, 0.0, 1.0);
   float moist = clamp(0.5 + sin(vPos.z * 2.0 + uTime * 0.1) * 0.25, 0.0, 1.0);
   vec3 color = getBiomeColor(temp, moist);
-  if(vElevation < -0.05) color = vec3(0.0, 0.3, 0.8);
+  if(vElevation < uOceanLevel) color = vec3(0.0, 0.3, 0.8);
   gl_FragColor = vec4(color, 1.0);
 }
 `;
@@ -86,12 +95,19 @@ function init() {
     fragmentShader,
     uniforms: {
       uTime: { value: 0 },
-      uElevationScale: { value: 0.15 }
+      uElevationScale: { value: params.elevationScale },
+      uNoiseFreq: { value: params.noiseFreq },
+      uOceanLevel: { value: params.oceanLevel }
     }
   });
 
   const planet = new THREE.Mesh(geometry, material);
   scene.add(planet);
+
+  gui = new GUI();
+  gui.add(params, 'elevationScale', 0, 0.5).onChange(v => material.uniforms.uElevationScale.value = v);
+  gui.add(params, 'noiseFreq', 1, 10).onChange(v => material.uniforms.uNoiseFreq.value = v);
+  gui.add(params, 'oceanLevel', -0.2, 0.2).onChange(v => material.uniforms.uOceanLevel.value = v);
 
   controls = new OrbitControls(camera, renderer.domElement);
   window.addEventListener('resize', onResize);
@@ -120,6 +136,7 @@ onBeforeUnmount(() => {
   cancelAnimationFrame(animationId);
   window.removeEventListener('resize', onResize);
   renderer.dispose();
+  gui?.destroy();
 });
 </script>
 

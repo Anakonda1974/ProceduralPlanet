@@ -44,6 +44,7 @@ The server serves the built `dist` directory and exposes a `/status` endpoint.
 - Biome coloring in the fragment shader
 - Seed-based generation for reproducible planets
 - Orbit controls for interactive inspection
+- Adjustable generation parameters via dat.GUI
 
 ## Future Improvements
 

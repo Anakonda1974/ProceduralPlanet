@@ -5,12 +5,13 @@ This document outlines how to expose planet generation parameters to the user an
 ## Parameter Controls
 
 1. **UI Sliders/Inputs**
-   - Add Vuetify input components (e.g. `v-slider`, `v-text-field`) for parameters such as:
+   - A quick solution is to use `dat.GUI` with controls for common parameters:
      - Noise seed
      - Elevation scale
      - Noise frequency and octaves
      - Ocean level
-   - Bind these inputs to reactive variables so changes immediately update the shader uniforms.
+  - Bind these inputs to reactive variables so changes immediately update the shader uniforms.
+  - A more polished Vuetify-based UI can later replace the `dat.GUI` panel.
 
 2. **Persistence**
    - Store current parameter values in `localStorage` to preserve settings across sessions.
