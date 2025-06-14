@@ -3,6 +3,7 @@
 ProceduralPlanet is an experimental project focused on generating and rendering planets procedurally using [Three.js](https://threejs.org/). The UI is built with [Vue 3](https://vuejs.org/) and [Vuetify](https://vuetifyjs.com/). The goal is to explore techniques for terrain creation, atmosphere effects and other visual features entirely through code.
 
 A detailed project description in German can be found in [docs/Projektbeschreibung.md](docs/Projektbeschreibung.md).
+See [docs/parameter_and_zoom_plan.md](docs/parameter_and_zoom_plan.md) for notes on exposing user parameters and handling zoom-based detail.
 
 ## Installation
 
