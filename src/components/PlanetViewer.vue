@@ -46,12 +46,12 @@ varying float vElevation;
 
 float noise3(vec3 p){
   p += uSeed;
-  return sin(p.x * 12.9898) * sin(p.y * 78.233) * sin(p.z * 37.719);
+  return sin(p.x) * sin(p.y) * sin(p.z);
 }
 
 float fbm(vec3 p){
   float value = 0.0;
-  float amp = 1.0;
+  float amp = 0.5;
   for(int i = 0; i < 8; i++){
     if(float(i) >= uNoiseOctaves) break;
     value += amp * noise3(p);
