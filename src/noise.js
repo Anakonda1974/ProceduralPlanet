@@ -63,8 +63,9 @@ export function createPerlin(seed = 1234) {
   }
 
   const noise2 = (x, y) => noise3(x, y, 0);
+  const noise1 = x => noise3(x, 0, 0);
 
-  return { noise2, noise3 };
+  return { noise1, noise2, noise3 };
 }
 
 // Fractal Brownian Motion using any underlying noise3 function
@@ -107,4 +108,37 @@ export function ffbmNoise3(noiseFn, x, y, z, {
 export function deriveSeed(base, offset) {
   const rng = mulberry32(base + offset * 0x9E3779B9);
   return Math.floor(rng() * 1e9);
+}
+
+// Simple string hash to create numeric offsets
+export function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i);
+  }
+  return h >>> 0;
+}
+
+// Constants controlling spacing in the global noise domain
+export const OFFSET_RANGE = 10000;
+export const FEATURE_STEP = 61;
+export const PARAM_STEP = 0.123;
+
+export function getLayerOffset(planetSeed, layerName) {
+  return (simpleHash(`${planetSeed}:${layerName}`) % OFFSET_RANGE);
+}
+
+export function getFeatureOffset(layerOffset, featureIndex) {
+  return layerOffset + featureIndex * FEATURE_STEP;
+}
+
+export function getFactorOffset(featureOffset, parameterTag) {
+  return featureOffset + simpleHash(parameterTag) * PARAM_STEP;
+}
+
+export function getFeatureFactor(noise, planetSeed, layerName, featureIndex, parameterTag) {
+  const layerOffset = getLayerOffset(planetSeed, layerName);
+  const featureOffset = getFeatureOffset(layerOffset, featureIndex);
+  const factorOffset = getFactorOffset(featureOffset, parameterTag);
+  return noise.noise1(factorOffset);
 }
