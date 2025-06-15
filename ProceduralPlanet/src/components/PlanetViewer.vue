@@ -13,6 +13,8 @@ import noise from '../noise.js'; // Assuming you have a noise library for proced
 const container = ref(null);
 let renderer, scene, camera, controls, planet, gui, animationId;
 let material;
+let atmosphereMesh = null;
+let cityMarkersGroup = null;
 let lastTime = 0;
 
 // Main parameter set
@@ -237,7 +239,8 @@ function init() {
     material.wireframe = v;
     rerender();
   });
-  // Future: Add more controls for atmosphere, cityMarkers, etc.
+  gui.add(params, 'atmosphere').onChange(updateAtmosphere);
+  gui.add(params, 'cityMarkers').onChange(updateCityMarkers);
 
   animate(0);
 }
@@ -247,6 +250,8 @@ function createPlanet() {
     scene.remove(planet);
     planet.geometry.dispose();
     // Don't dispose material; it's reused for uniforms
+    atmosphereMesh = null;
+    cityMarkersGroup = null;
   }
   const geometry = new THREE.SphereGeometry(1, params.baseResolution, params.baseResolution);
   material = new THREE.ShaderMaterial({
@@ -273,11 +278,77 @@ function createPlanet() {
   planet = new THREE.Mesh(geometry, material);
   scene.add(planet);
   updateSeeds(params.seed);
+  updateAtmosphere(params.atmosphere);
+  updateCityMarkers(params.cityMarkers);
 }
 
 function updateResolution(v){
   currentResolution = v;
   createPlanet();
+}
+
+function updateAtmosphere(v){
+  if (!planet) return;
+  if(v){
+    if(!atmosphereMesh){
+      const geo = new THREE.SphereGeometry(1.05, 32, 32);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0x99ccff,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.BackSide
+      });
+      atmosphereMesh = new THREE.Mesh(geo, mat);
+      planet.add(atmosphereMesh);
+    }
+  } else if(atmosphereMesh){
+    planet.remove(atmosphereMesh);
+    atmosphereMesh.geometry.dispose();
+    atmosphereMesh.material.dispose();
+    atmosphereMesh = null;
+  }
+  rerender();
+}
+
+function createCityMarkersGroup(count = 10){
+  const group = new THREE.Group();
+  for(let i=0;i<count;i++){
+    const geo = new THREE.SphereGeometry(0.01, 4, 4);
+    const mat = new THREE.MeshBasicMaterial({color: 0xff3333});
+    const u = Math.random();
+    const vpos = Math.random();
+    const theta = 2 * Math.PI * u;
+    const phi = Math.acos(2 * vpos - 1);
+    const r = 1.01;
+    const marker = new THREE.Mesh(geo, mat);
+    marker.position.set(
+      r * Math.sin(phi) * Math.cos(theta),
+      r * Math.cos(phi),
+      r * Math.sin(phi) * Math.sin(theta)
+    );
+    group.add(marker);
+  }
+  return group;
+}
+
+function updateCityMarkers(v){
+  if (!planet) return;
+  if(v){
+    if(!cityMarkersGroup){
+      cityMarkersGroup = createCityMarkersGroup();
+      planet.add(cityMarkersGroup);
+    }
+  } else if(cityMarkersGroup){
+    planet.remove(cityMarkersGroup);
+    cityMarkersGroup.traverse(child => {
+      if(child.isMesh){
+        child.geometry.dispose();
+        child.material.dispose();
+      }
+    });
+    cityMarkersGroup = null;
+  }
+  rerender();
 }
 
 function rerender() {
