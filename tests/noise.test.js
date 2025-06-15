@@ -1,4 +1,4 @@
-import noise, { createPerlin } from '../src/noise.js';
+import noise, { createPerlin } from '../ProceduralPlanet/src/noise.js';
 import assert from 'assert/strict';
 import { test } from 'node:test';
 
