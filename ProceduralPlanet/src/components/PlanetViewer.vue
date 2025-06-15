@@ -7,6 +7,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from 'dat.gui';
+import noise from '../noise.js'; // Assuming you have a noise library for procedural generation
 
 // --- PARAMETERS ---
 const container = ref(null);
@@ -113,23 +114,27 @@ float ffbm(vec3 p, float seed){
 }
 
 void main(){
-  vec3 dir = normalize(position);
-  float noise = ffbm(position * uNoiseFreq + uTime * 0.1, uTerrainSeed);
-  float tempNoise = ffbm(position * uNoiseFreq + uTime * 0.1, uTempSeed);
-  float moistNoise = ffbm(position * uNoiseFreq + uTime * 0.1, uMoistSeed);
+  
+  vec3 pos = position;
+  vec3 normal = normalize(position);
+  pos += normal * uTime * 0.01; // Simple wave effect based on time
+  
+  float noiseValue = fbm(pos * uNoiseFreq, uTerrainSeed);
+  float tempValue = ffbm(pos * uNoiseFreq, uTempSeed);
+  float moistValue = ffbm(pos * uNoiseFreq, uMoistSeed);
 
-  // Correct elevation on sphere: base + all features
-  float elevation = 1.0
-    + noise * uElevationScale
-    + tempNoise * 0.1
-    + moistNoise * 0.1;
+  // Elevation based on noise
+  float elevation = 1.0 + noiseValue * uElevationScale;
 
-  vec3 pos = dir * elevation;
+  // Apply temperature and moisture to modify elevation
+  elevation += (tempValue - 0.5) * 0.1; // Adjust temperature influence
+  elevation += (moistValue - 0.5) * 0.05; // Adjust moisture influence
 
-  vPos = pos;
-  vElevation = elevation; // actual "radius" from center
+  vElevation = elevation;
+  vPos = pos * elevation;
 
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(vPos, 1.0);
+  gl_PointSize = 1.0;
 }
 `;
 
