@@ -5,7 +5,7 @@ export default function noise(x, seed) {
 }
 
 // Mulberry32 PRNG for deterministic permutation tables
-function mulberry32(a) {
+export function mulberry32(a) {
   return function () {
     let t = a += 0x6D2B79F5;
     t = Math.imul(t ^ t >>> 15, t | 1);
@@ -83,4 +83,28 @@ export function fbmNoise3(noiseFn, x, y, z, {
     amp *= gain;
   }
   return value;
+}
+
+// Filtered fractal Brownian motion (absolute value for ridges)
+export function ffbmNoise3(noiseFn, x, y, z, {
+  octaves = 5,
+  lacunarity = 2,
+  gain = 0.5
+} = {}) {
+  let value = 0;
+  let amp = 0.5;
+  for (let i = 0; i < octaves; i++) {
+    value += amp * Math.abs(noiseFn(x, y, z));
+    x *= lacunarity;
+    y *= lacunarity;
+    z *= lacunarity;
+    amp *= gain;
+  }
+  return value;
+}
+
+// Create deterministic derived seeds from a main seed
+export function deriveSeed(base, offset) {
+  const rng = mulberry32(base + offset * 0x9E3779B9);
+  return Math.floor(rng() * 1e9);
 }
