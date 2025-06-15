@@ -19,7 +19,7 @@ const params = {
   noiseOctaves: 5,
   lacunarity: 2.0,
   gain: 0.5,
-  elevationScale: 0.15,
+  elevationScale: 0.3,
   noiseFreq: 5.0,
 
   oceanLevel: -0.05,
@@ -32,7 +32,8 @@ const params = {
   lodEnabled: false,
   baseResolution: 256,
   atmosphere: false,
-  cityMarkers: false
+  cityMarkers: false,
+  wireframe: false
 };
 
 let currentResolution = params.baseResolution;
@@ -101,7 +102,7 @@ float ffbm(vec3 p, float seed){
 
 void main(){
   vec3 nPos = normalize(position);
-  float elevation = ffbm(nPos * uNoiseFreq + uTime * 0.1, uTerrainSeed);
+  float elevation = ffbm(nPos * uNoiseFreq + uTime * 0.1, uTerrainSeed) * 2.0 - 1.0;
   vPos = nPos;
   vElevation = elevation;
   vec3 displaced = nPos * (1.0 + elevation * uElevationScale);
@@ -200,9 +201,9 @@ function init() {
       uSnowHeight: { value: params.snowHeight }
     }
   });
+  material.wireframe = params.wireframe;
 
-  const planet = new THREE.Mesh(geometry, material);
-  //planet = new THREE.Mesh(geometry, material);
+  planet = new THREE.Mesh(geometry, material);
   scene.add(planet);
   updateSeeds(params.seed);
 
@@ -224,6 +225,7 @@ function init() {
   gui.add(params, 'baseResolution', 16, 512, 1).onChange(updateResolution);
   gui.add(params, 'atmosphere');
   gui.add(params, 'cityMarkers');
+  gui.add(params, 'wireframe').onChange(v => material.wireframe = v);
 
   controls = new OrbitControls(camera, renderer.domElement);
   window.addEventListener('resize', onResize);
