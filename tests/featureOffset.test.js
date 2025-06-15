@@ -1,4 +1,4 @@
-import { createPerlin, getFeatureFactor } from '../src/noise.js';
+import { createPerlin, getFeatureFactor } from '../ProceduralPlanet/src/noise.js';
 import assert from 'assert/strict';
 import { test } from 'node:test';
 

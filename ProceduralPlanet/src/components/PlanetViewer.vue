@@ -296,9 +296,10 @@ function onResize() {
 }
 
 function animate(time){
-  material.uniforms.uTime.value = time * 0.001;
-
-  planet.rotation.y += params.rotationSpeed * 0.01;
+  const delta = (time - lastTime) * 0.001;
+  lastTime = time;
+  material.uniforms.uTime.value += delta * params.dayCycle;
+  planet.rotation.y += delta * params.rotationSpeed;
 
   controls.update();
   renderer.render(scene, camera);
