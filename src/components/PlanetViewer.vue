@@ -334,7 +334,7 @@ function animate(time){
   const delta = (time - lastTime) * 0.001;
   lastTime = time;
   material.uniforms.uTime.value += delta * params.dayCycle;
-  //planet.rotation.y += delta * params.rotationSpeed;
+  planet.rotation.y += delta * params.rotationSpeed;
 
   if(params.lodEnabled){
     const dist = camera.position.length();
