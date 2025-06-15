@@ -37,43 +37,71 @@ const params = {
 
 let currentResolution = params.baseResolution;
 
+// simple deterministic seed derivation
+function mulberry32(a) {
+  return function () {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function deriveSeed(base, offset) {
+  const rng = mulberry32(base + offset * 0x9e3779b9);
+  return Math.floor(rng() * 1e9);
+}
+
+let terrainSeed = deriveSeed(params.seed, 1);
+let tempSeed = deriveSeed(params.seed, 2);
+let moistSeed = deriveSeed(params.seed, 3);
+
 const vertexShader = `
 uniform float uTime;
 uniform float uElevationScale;
 uniform float uNoiseFreq;
-uniform float uSeed;
+uniform float uTerrainSeed;
+uniform float uTempSeed;
+uniform float uMoistSeed;
 uniform float uLacunarity;
 uniform float uGain;
 uniform float uNoiseOctaves;
 varying vec3 vPos;
 varying float vElevation;
 
-float noise3(vec3 p){
-  p += uSeed;
-  return sin(p.x) * sin(p.y) * sin(p.z);
+float noise3(vec3 p, float seed){
+  p += seed;
+  return sin(dot(p, vec3(12.9898,78.233,37.719)));
 }
 
-float fbm(vec3 p){
+float fbm(vec3 p, float seed){
   float value = 0.0;
-  float amp = 0.5;
-  for(int i = 0; i < 5; i++){
+  float amp = 1.0;
   for(int i = 0; i < 8; i++){
     if(float(i) >= uNoiseOctaves) break;
-    value += amp * noise3(p);
-    p *= 2.0;
-    amp *= 0.5;
+    value += amp * noise3(p, seed + float(i));
     p *= uLacunarity;
     amp *= uGain;
   }
   return value;
 }
+
+float ffbm(vec3 p, float seed){
+  float value = 0.0;
+  float amp = 0.5;
+  for(int i = 0; i < 8; i++){
+    if(float(i) >= uNoiseOctaves) break;
+    value += amp * abs(noise3(p, seed + float(i)));
+    p *= uLacunarity;
+    amp *= uGain;
+  }
   return value;
 }
 
 
 void main(){
   vec3 nPos = normalize(position);
-  float elevation = fbm(nPos * uNoiseFreq + uTime * 0.1);
+  float elevation = ffbm(nPos * uNoiseFreq + uTime * 0.1, uTerrainSeed);
   vPos = nPos;
   vElevation = elevation;
   vec3 displaced = nPos * (1.0 + elevation * uElevationScale);
@@ -86,6 +114,28 @@ varying vec3 vPos;
 varying float vElevation;
 uniform float uTime;
 uniform float uOceanLevel;
+uniform float uTempSeed;
+uniform float uMoistSeed;
+uniform float uLacunarity;
+uniform float uGain;
+uniform float uNoiseOctaves;
+
+float noise3(vec3 p, float seed){
+  p += seed;
+  return sin(dot(p, vec3(12.9898,78.233,37.719)));
+}
+
+float fbm(vec3 p, float seed){
+  float value = 0.0;
+  float amp = 1.0;
+  for(int i = 0; i < 8; i++){
+    if(float(i) >= uNoiseOctaves) break;
+    value += amp * noise3(p, seed + float(i));
+    p *= uLacunarity;
+    amp *= uGain;
+  }
+  return value;
+}
 
 vec3 getBiomeColor(float temp, float moist){
   if(temp < 0.3){
@@ -105,8 +155,8 @@ uniform vec3 uLandColorHigh;
 uniform float uSnowHeight;
 
 void main(){
-  float temp = clamp((vPos.y + 1.0) / 2.0 + sin(vPos.x * 2.0 + uTime * 0.1) * 0.1, 0.0, 1.0);
-  float moist = clamp(0.5 + sin(vPos.z * 2.0 + uTime * 0.1) * 0.25, 0.0, 1.0);
+  float temp = clamp((vPos.y + 1.0) / 2.0 + fbm(vPos * 2.0 + uTime * 0.1, uTempSeed) * 0.5, 0.0, 1.0);
+  float moist = clamp(0.5 + fbm(vPos * 2.0 + uTime * 0.1, uMoistSeed) * 0.5, 0.0, 1.0);
    vec3 color = getBiomeColor(temp, moist);
   if(vElevation < uOceanLevel) color = vec3(0.0, 0.3, 0.8);
    color = mix(uLandColorLow, uLandColorHigh, clamp(vElevation * 0.5 + 0.5, 0.0, 1.0));
@@ -138,11 +188,12 @@ function init() {
       uElevationScale: { value: params.elevationScale },
       uNoiseFreq: { value: params.noiseFreq },
       uOceanLevel: { value: params.oceanLevel },
-      uSeed: { value: params.seed },
+      uTerrainSeed: { value: terrainSeed },
+      uTempSeed: { value: tempSeed },
+      uMoistSeed: { value: moistSeed },
       uLacunarity: { value: params.lacunarity },
       uGain: { value: params.gain },
       uNoiseOctaves: { value: params.noiseOctaves },
-      uOceanLevel: { value: params.oceanLevel },
       uOceanColor: { value: new THREE.Color(params.oceanColor) },
       uLandColorLow: { value: new THREE.Color(params.landColorLow) },
       uLandColorHigh: { value: new THREE.Color(params.landColorHigh) },
@@ -153,9 +204,10 @@ function init() {
   const planet = new THREE.Mesh(geometry, material);
   //planet = new THREE.Mesh(geometry, material);
   scene.add(planet);
+  updateSeeds(params.seed);
 
   gui = new GUI();
-  gui.add(params, 'seed', 1, 999, 1).onChange(v => material.uniforms.uSeed.value = v);
+  gui.add(params, 'seed', 1, 999, 1).onChange(v => updateSeeds(v));
   gui.add(params, 'noiseOctaves', 1, 8, 1).onChange(v => material.uniforms.uNoiseOctaves.value = v);
   gui.add(params, 'lacunarity', 1, 4).onChange(v => material.uniforms.uLacunarity.value = v);
   gui.add(params, 'gain', 0.1, 1).onChange(v => material.uniforms.uGain.value = v);
@@ -192,6 +244,15 @@ function updateResolution(v){
   const newGeo = new THREE.SphereGeometry(1, v, v);
   planet.geometry.dispose();
   planet.geometry = newGeo;
+}
+
+function updateSeeds(base){
+  terrainSeed = deriveSeed(base, 1);
+  tempSeed = deriveSeed(base, 2);
+  moistSeed = deriveSeed(base, 3);
+  material.uniforms.uTerrainSeed.value = terrainSeed;
+  material.uniforms.uTempSeed.value = tempSeed;
+  material.uniforms.uMoistSeed.value = moistSeed;
 }
 
 function animate(time){
